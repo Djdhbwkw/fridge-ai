@@ -2,8 +2,10 @@
 # 安裝：pip install flask google-genai
 # 執行：python app.py，然後用瀏覽器打開 http://127.0.0.1:5000
 
+import io
 import json
 import os
+from PIL import Image
 from flask import Flask, request, render_template_string
 from google import genai
 from google.genai import types
@@ -71,6 +73,16 @@ def home():
 def recognize():
     # STEP 2：AI 辨識
     photo = request.files["photo"]
+    # 手機照片很大，先縮小到長邊 1024 像素，加快上傳 AI 的速度、也比較省記憶體
+    try:
+        img = Image.open(photo.stream)
+        img = img.convert("RGB")
+        img.thumbnail((1024, 1024))
+        buf = io.BytesIO()
+        img.save(buf, format="JPEG", quality=85)
+        image_bytes = buf.getvalue()
+    except Exception as e:
+        return render_template_string(PAGE, step="upload", error=f"照片讀取失敗：{e}")
     prompt = (
         "請辨識這張冰箱照片裡看得到的食材。"
         "只列出照片中清楚看得到的東西，不確定的不要列。"
@@ -80,7 +92,7 @@ def recognize():
         resp = client.models.generate_content(
             model=MODEL,
             contents=[
-                types.Part.from_bytes(data=photo.read(), mime_type=photo.mimetype or "image/jpeg"),
+                types.Part.from_bytes(data=image_bytes, mime_type="image/jpeg"),
                 prompt,
             ],
             config=types.GenerateContentConfig(response_mime_type="application/json"),
