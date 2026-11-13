@@ -92,6 +92,7 @@
 | API 服務忙線或回應過慢 | 自動重試、主要模型失敗時改用備用模型；單次呼叫與整體處理皆設定時間上限 |
 | API 費用與次數限制 | 每份食譜僅呼叫 2 次 API；照片先縮圖降低 token 用量 |
 | 金鑰外洩 | API 金鑰以環境變數設定，不寫入程式碼、不上傳到 GitHub |
+| 惡意輸入與額度濫用 | 檔案大小與格式檢查、輸入長度限制、每 IP 頻率限制、HTTP 安全標頭，詳見 [資安風險測試報告](SECURITY.md) |
 
 ---
 
@@ -159,6 +160,9 @@ fridge-ai/
 ├── requirements.txt    # Python 套件
 ├── gunicorn.conf.py    # 伺服器設定（逾時時間）
 ├── .env.example        # 環境變數範例
+├── SECURITY.md         # 資安風險測試報告
+├── tests/
+│   └── test_security.py  # 資安測試程式
 └── docs/               # README 使用的畫面截圖
 ```
 
