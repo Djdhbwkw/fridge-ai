@@ -77,7 +77,7 @@ def friendly(e):
 
 app = Flask(__name__)
 
-PAGE = """
+PAGE = r"""
 <!doctype html><html lang="zh-Hant"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>AI 冰箱管家</title>
@@ -107,8 +107,9 @@ body{margin:0;font-family:"Noto Sans TC",system-ui,sans-serif;color:var(--ink);b
 .drop .ico{font-size:46px;line-height:1}
 .drop b{display:block;margin-top:10px;font-size:17px;color:var(--g8)} .drop small{color:var(--mute)}
 .drop img{display:none;max-width:100%;max-height:320px;border-radius:12px}
-.drop.has img{display:block;margin:0 auto} .drop.has .ph{display:none} .drop.has{padding:12px;border-style:solid}
-input[type=file]{display:none}
+.drop.has img{margin:0 auto} .drop.has .ph{display:none} .drop.has{padding:12px;border-style:solid}
+.drop{position:relative} .drop input[type=file]{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;font-size:0}
+.fname{display:none;margin-top:8px;font-size:14px;color:var(--g8);font-weight:700} .drop.has .fname{display:block}
 .btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin-top:18px;padding:15px;border:0;border-radius:14px;
  background:linear-gradient(135deg,var(--g7),var(--g5));color:#fff;font:700 17px "Noto Sans TC",sans-serif;cursor:pointer;box-shadow:0 6px 16px #2e6b3a40;text-decoration:none}
 .btn:disabled{opacity:.5;box-shadow:none;cursor:not-allowed}
@@ -162,13 +163,14 @@ footer{text-align:center;color:var(--mute);font-size:12px;padding:10px 0 30px}
 <section class="card">
  <h2>📸 拍下你的冰箱</h2>
  <p class="sub">打開冰箱拍一張，AI 會幫你找出有哪些食材。</p>
- <form method="post" action="/recognize" enctype="multipart/form-data" onsubmit="return go(this,'AI 正在辨識食材…','大約 10～30 秒')">
+ <form method="post" action="/recognize" enctype="multipart/form-data" onsubmit="return checkPhoto(this)">
   <label class="drop" id="drop">
    <div class="ph"><div class="ico">📷</div><b>點這裡拍照或選照片</b><small>支援手機相機、相簿圖片</small></div>
    <img id="pv" alt="預覽">
-   <input type="file" name="photo" accept="image/*" required onchange="pick(this)">
+   <div class="fname" id="fname"></div>
+   <input type="file" name="photo" id="photo" accept="image/*" onchange="pick(this)" oninput="pick(this)">
   </label>
-  <button class="btn" id="go1" disabled>✨ AI 辨識食材</button>
+  <button class="btn" id="go1">✨ AI 辨識食材</button>
  </form>
 </section>
 {% endif %}
@@ -204,7 +206,14 @@ footer{text-align:center;color:var(--mute);font-size:12px;padding:10px 0 30px}
 <script>
 function go(f,t,s){document.getElementById('lt').textContent=t;document.getElementById('ls').textContent=s;document.getElementById('load').classList.add('on');var b=f.querySelector('.btn');if(b)b.disabled=true;return true}
 window.addEventListener('pageshow',function(){document.getElementById('load').classList.remove('on')});
-function pick(i){if(!i.files[0])return;var r=new FileReader();r.onload=function(e){var p=document.getElementById('pv');p.src=e.target.result;document.getElementById('drop').classList.add('has');document.getElementById('go1').disabled=false};r.readAsDataURL(i.files[0])}
+function pick(i){var f=i.files&&i.files[0];if(!f)return;
+ var d=document.getElementById('drop'),p=document.getElementById('pv');
+ d.classList.add('has');document.getElementById('fname').textContent='✅ 已選擇：'+f.name;
+ p.style.display='block';p.onerror=function(){p.style.display='none'};
+ try{p.src=URL.createObjectURL(f)}catch(e){p.style.display='none'}}
+function checkPhoto(f){var i=document.getElementById('photo');
+ if(!i.files||!i.files[0]){alert('請先拍照或選一張照片');return false}
+ return go(f,'AI 正在辨識食材…','大約 10～30 秒')}
 var list=[],exp={};
 function draw(){var c=document.getElementById('chips');if(!c)return;c.innerHTML='';
  if(!list.length){c.innerHTML='<span class="hint">目前沒有食材，請在下方新增。</span>'}
@@ -240,15 +249,22 @@ def recognize():
     # STEP 2：AI 辨識
     photo = request.files["photo"]
     # 手機照片很大，先縮小到長邊 800 像素，加快上傳 AI 的速度、也比較省記憶體
+    raw = photo.read()
+    mime = "image/jpeg"
     try:
-        img = Image.open(photo.stream)
+        img = Image.open(io.BytesIO(raw))
         img = img.convert("RGB")
         img.thumbnail((800, 800))
         buf = io.BytesIO()
         img.save(buf, format="JPEG", quality=85)
         image_bytes = buf.getvalue()
     except Exception as e:
-        return render_template_string(PAGE, step="upload", error=f"照片讀取失敗：{e}")
+        # 縮圖失敗就用原始檔案（Gemini 本身支援 HEIC 等格式）
+        print(f"[照片] 無法縮圖，改傳原檔：{photo.mimetype} {e}", flush=True)
+        image_bytes, mime = raw, (photo.mimetype or "image/jpeg")
+    if not image_bytes:
+        return render_template_string(PAGE, step="upload", error="沒有收到照片，請重新選擇一次。")
+    print(f"[照片] 收到 {photo.filename} 原始 {len(raw) // 1024} KB → 送出 {len(image_bytes) // 1024} KB", flush=True)
     prompt = (
         "請辨識這張冰箱照片裡看得到的食材。"
         "只列出照片中清楚看得到的東西，不確定的不要列。"
@@ -257,7 +273,7 @@ def recognize():
     try:
         resp = call_ai(
             contents=[
-                types.Part.from_bytes(data=image_bytes, mime_type="image/jpeg"),
+                types.Part.from_bytes(data=image_bytes, mime_type=mime),
                 prompt,
             ],
             config=types.GenerateContentConfig(response_mime_type="application/json"),
