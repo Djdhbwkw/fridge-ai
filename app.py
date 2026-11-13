@@ -10,7 +10,7 @@ from google.genai import types
 
 # 金鑰從環境變數讀取（上線到 Render 時在網站後台設定 GEMINI_API_KEY），不要直接寫在程式裡
 API_KEY = os.environ.get("GEMINI_API_KEY", "")
-MODEL = "gemini-2.5-flash"          # 如果出現找不到模型，到 AI Studio 換成目前的 Flash 名稱
+MODEL = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")   # 可在 Render 環境變數 GEMINI_MODEL 換模型
 
 client = genai.Client(api_key=API_KEY)
 app = Flask(__name__)
