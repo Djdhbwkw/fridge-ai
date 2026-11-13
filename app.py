@@ -182,6 +182,9 @@ h2{margin:0 0 4px;font-size:20px;line-height:1.4}
 .btn:disabled{opacity:.5;cursor:wait}
 .btn.plain{background:transparent;color:var(--leaf);border:1.5px solid var(--leaf)}
 .btn.plain:hover{background:#E6F0E8}
+.or{display:flex;align-items:center;gap:12px;margin:18px 0 0;color:var(--soft);font-size:14px}
+.or:before,.or:after{content:"";flex:1;height:1px;background:var(--line)}
+.or+.btn{margin-top:14px}
 :focus-visible{outline:3px solid var(--yolk);outline-offset:2px}
 .chips{display:flex;flex-wrap:wrap;gap:8px;min-height:40px}
 .chip{display:inline-flex;align-items:center;gap:4px;padding:5px 6px 5px 12px;border:1px solid var(--line);border-radius:6px;background:#fff;font-size:16px;cursor:pointer;user-select:none}
@@ -257,15 +260,22 @@ footer{margin-top:28px;font-size:13px;color:var(--soft)}
   </label>
   <button class="btn" id="go1">辨識食材</button>
  </form>
+ <div class="or"><span>或</span></div>
+ <a href="/manual" class="btn plain">不拍照，直接輸入食材</a>
 </section>
 {% endif %}
 
 {% if step == 'confirm' %}
 <section class="panel">
+ {% if manual %}
+ <h2>冰箱裡有什麼？</h2>
+ <p class="sub">一次輸入一樣食材，按「加入」。點一下食材可以標成快過期，會優先用掉。</p>
+ {% else %}
  <h2>冰箱裡有這些</h2>
  <p class="sub">刪掉認錯的，補上漏掉的。點一下食材可以標成快過期，會優先用掉。</p>
+ {% endif %}
  <div class="chips" id="chips"></div>
- <div class="add"><input id="newItem" aria-label="新增食材" placeholder="補上食材，例如：豆腐" onkeydown="if(event.key==='Enter'){event.preventDefault();addItem()}"><button type="button" onclick="addItem()">加入</button></div>
+ <div class="add"><input id="newItem" aria-label="新增食材" placeholder="{{ '輸入食材，例如：雞蛋' if manual else '補上食材，例如：豆腐' }}"{{ ' autofocus' if manual }} onkeydown="if(event.key==='Enter'){event.preventDefault();addItem()}"><button type="button" onclick="addItem()">加入</button></div>
  <form method="post" action="/recipe" onsubmit="return submitRecipe(this)">
   <textarea name="items" id="items" hidden>{{ items }}</textarea>
   <input type="hidden" name="expiring" id="expiring">
@@ -305,9 +315,9 @@ function draw(){var c=document.getElementById('chips');if(!c)return;c.innerHTML=
   d.onclick=function(){exp[n]=!exp[n];draw()};d.onkeydown=function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();d.onclick()}};
   var x=document.createElement('button');x.type='button';x.textContent='✕';x.setAttribute('aria-label','刪除'+n);x.onclick=function(e){e.stopPropagation();list.splice(i,1);delete exp[n];draw()};
   d.appendChild(x);c.appendChild(d)})}
-function addItem(){var i=document.getElementById('newItem');var v=i.value.trim().slice(0,20);if(v&&list.indexOf(v)<0&&list.length<30){list.push(v);draw()}i.value='';i.focus()}
+function addItem(){var i=document.getElementById('newItem');i.value.split(/[,，、\s]+/).forEach(function(v){v=v.trim().slice(0,20);if(v&&list.indexOf(v)<0&&list.length<30)list.push(v)});draw();i.value='';i.focus()}
 function tag(t){var p=document.getElementById('pref');if(p.value.indexOf(t)<0)p.value=p.value?p.value+'、'+t:t}
-function submitRecipe(f){if(!list.length){alert('請至少保留一樣食材');return false}
+function submitRecipe(f){var ni=document.getElementById('newItem');if(ni&&ni.value.trim())addItem();if(!list.length){alert('請至少保留一樣食材');return false}
  document.getElementById('items').value=list.join('\n');
  document.getElementById('expiring').value=list.filter(function(n){return exp[n]}).join(', ');
  return go(f,'正在想今天煮什麼','大約 10～40 秒')}
@@ -350,6 +360,12 @@ function fmt(d){
 @app.route("/")
 def home():
     return render_template_string(PAGE, step="upload")
+
+
+@app.route("/manual")
+def manual():
+    # 不拍照，直接手動輸入食材
+    return render_template_string(PAGE, step="confirm", items="", manual=True)
 
 
 @app.route("/recognize", methods=["POST"])
