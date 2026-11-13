@@ -18,27 +18,47 @@ MODEL = os.environ.get("GEMINI_MODEL", "gemini-3.8-flash")   # 可在 Render 環
 # 主要模型忙線時改用的備用模型（用逗號分隔，可在 Render 環境變數 GEMINI_FALLBACK 修改）
 FALLBACK = [m.strip() for m in os.environ.get("GEMINI_FALLBACK", "gemini-4-hydrogen").split(",") if m.strip()]
 
-# 每次呼叫 AI 最多等 40 秒，避免一直轉圈圈
-client = genai.Client(api_key=API_KEY, http_options=types.HttpOptions(timeout=40000))
+# 每次呼叫 AI 最多等 30 秒，避免一直轉圈圈
+client = genai.Client(api_key=API_KEY, http_options=types.HttpOptions(timeout=30000))
+
+
+def _fast_config(config):
+    """加上「低思考」設定，讓模型少想一點、回得快一點。套件不支援就維持原設定。"""
+    try:
+        level = getattr(types, "ThinkingLevel", None)
+        tc = types.ThinkingConfig(thinking_level=level.LOW if level else "low")
+        if config is None:
+            return types.GenerateContentConfig(thinking_config=tc)
+        return config.model_copy(update={"thinking_config": tc})
+    except Exception:
+        return config
 
 
 def call_ai(contents, config=None):
-    """呼叫 Gemini；遇到 503 忙線或 429 次數上限時自動重試，再換備用模型。"""
+    """呼叫 Gemini：先用低思考模式求快；主模型忙線（503/429）就立刻換備用模型，不再原地等待。"""
+    fast = _fast_config(config)
     last_err = None
-    for model in [MODEL] + FALLBACK:
-        for attempt in range(2):
-            try:
-                resp = client.models.generate_content(model=model, contents=contents, config=config)
-                print(f"[AI] 使用模型={model}（第 {attempt + 1} 次嘗試）", flush=True)
-                return resp
-            except Exception as e:
-                last_err = e
-                msg = str(e)
-                print(f"[AI 重試] 模型={model} 第 {attempt + 1} 次失敗：{msg[:120]}", flush=True)
-                if "503" in msg or "UNAVAILABLE" in msg or "429" in msg or "RESOURCE_EXHAUSTED" in msg:
-                    time.sleep(2)   # 等 2 秒再試
-                    continue
-                break   # 其他錯誤（例如模型不存在）直接換下一個模型
+    models = [MODEL] + FALLBACK
+    start = time.time()
+    for round_no in range(2):              # 全部模型都忙的話，休息 2 秒再整輪試一次
+        for model in models:
+            for cfg in ([fast, config] if fast is not config else [config]):
+                if time.time() - start > 90:      # 總共超過 90 秒就放棄，避免頁面一直轉圈圈
+                    raise last_err or TimeoutError("AI 回應逾時")
+                t0 = time.time()
+                try:
+                    resp = client.models.generate_content(model=model, contents=contents, config=cfg)
+                    print(f"[AI] 使用模型={model} 耗時 {time.time() - t0:.1f} 秒", flush=True)
+                    return resp
+                except Exception as e:
+                    last_err = e
+                    msg = str(e)
+                    print(f"[AI 失敗] 模型={model} 耗時 {time.time() - t0:.1f} 秒：{msg[:120]}", flush=True)
+                    if "thinking" in msg.lower() and cfg is fast:
+                        continue           # 這個模型不支援低思考設定 → 用一般設定再試
+                    break                  # 忙線、逾時或其他錯誤 → 換下一個模型
+        if round_no == 0:
+            time.sleep(2)
     raise last_err
 
 
@@ -48,7 +68,11 @@ def friendly(e):
         return "AI 目前使用人數太多，請過 1 分鐘再試一次。"
     if "429" in msg or "RESOURCE_EXHAUSTED" in msg:
         return "今天的免費使用次數可能用完了，請稍後再試。"
+    if "timed out" in msg.lower() or "timeout" in msg.lower() or "逾時" in msg:
+        return "AI 回應太慢，請再試一次。"
     return f"發生錯誤：{msg[:200]}"
+
+
 app = Flask(__name__)
 
 PAGE = """
@@ -110,11 +134,11 @@ def home():
 def recognize():
     # STEP 2：AI 辨識
     photo = request.files["photo"]
-    # 手機照片很大，先縮小到長邊 1024 像素，加快上傳 AI 的速度、也比較省記憶體
+    # 手機照片很大，先縮小到長邊 800 像素，加快上傳 AI 的速度、也比較省記憶體
     try:
         img = Image.open(photo.stream)
         img = img.convert("RGB")
-        img.thumbnail((1024, 1024))
+        img.thumbnail((800, 800))
         buf = io.BytesIO()
         img.save(buf, format="JPEG", quality=85)
         image_bytes = buf.getvalue()
