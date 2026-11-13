@@ -18,14 +18,15 @@ MODEL = os.environ.get("GEMINI_MODEL", "gemini-3.8-flash")   # 可在 Render 環
 # 主要模型忙線時改用的備用模型（用逗號分隔，可在 Render 環境變數 GEMINI_FALLBACK 修改）
 FALLBACK = [m.strip() for m in os.environ.get("GEMINI_FALLBACK", "gemini-4-hydrogen").split(",") if m.strip()]
 
-client = genai.Client(api_key=API_KEY)
+# 每次呼叫 AI 最多等 40 秒，避免一直轉圈圈
+client = genai.Client(api_key=API_KEY, http_options=types.HttpOptions(timeout=40000))
 
 
 def call_ai(contents, config=None):
     """呼叫 Gemini；遇到 503 忙線或 429 次數上限時自動重試，再換備用模型。"""
     last_err = None
     for model in [MODEL] + FALLBACK:
-        for attempt in range(3):
+        for attempt in range(2):
             try:
                 resp = client.models.generate_content(model=model, contents=contents, config=config)
                 print(f"[AI] 使用模型={model}（第 {attempt + 1} 次嘗試）", flush=True)
@@ -35,7 +36,7 @@ def call_ai(contents, config=None):
                 msg = str(e)
                 print(f"[AI 重試] 模型={model} 第 {attempt + 1} 次失敗：{msg[:120]}", flush=True)
                 if "503" in msg or "UNAVAILABLE" in msg or "429" in msg or "RESOURCE_EXHAUSTED" in msg:
-                    time.sleep(2 * (attempt + 1))   # 等 2、4、6 秒再試
+                    time.sleep(2)   # 等 2 秒再試
                     continue
                 break   # 其他錯誤（例如模型不存在）直接換下一個模型
     raise last_err
@@ -66,7 +67,7 @@ PAGE = """
 {% if step == 'upload' %}
 <div class="card">
  <p><b>STEP 1：拍照上傳</b></p>
- <form method="post" action="/recognize" enctype="multipart/form-data">
+ <form method="post" action="/recognize" enctype="multipart/form-data" onsubmit="busy(this,'AI 辨識中，約 10～30 秒…')">
   <input type="file" name="photo" accept="image/*" capture="environment" required><br><br>
   <button>AI 辨識食材</button>
  </form>
@@ -76,7 +77,7 @@ PAGE = """
 {% if step == 'confirm' %}
 <div class="card">
  <p><b>STEP 3：確認食材清單</b>（可以刪除、修改或新增，一行一個）</p>
- <form method="post" action="/recipe">
+ <form method="post" action="/recipe" onsubmit="busy(this,'食譜生成中，約 10～40 秒…')">
   <textarea name="items" rows="8">{{ items }}</textarea>
   <p>即期品（優先用掉，用逗號分隔，可留空）：</p>
   <input type="text" name="expiring" placeholder="例如：豬肉, 豆腐">
@@ -93,6 +94,9 @@ PAGE = """
 {% endif %}
 
 {% if error %}<div class="card" style="color:#b00">{{ error }}</div>{% endif %}
+<script>
+function busy(f,t){var b=f.querySelector('button');b.disabled=true;b.textContent='⏳ '+t;}
+</script>
 </body></html>
 """
 
