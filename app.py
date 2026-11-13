@@ -271,7 +271,6 @@ footer{margin-top:28px;font-size:13px;color:var(--soft)}
 <a href="/" class="btn plain">重新拍一張</a>
 {% endif %}
 
-<footer>林煜恩｜生成式 AI 專題</footer>
 </div>
 
 <div class="load" id="load" aria-live="polite"><b id="lt">處理中</b><small id="ls"></small><div class="bar"></div></div>
