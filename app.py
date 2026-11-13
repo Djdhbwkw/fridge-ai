@@ -15,10 +15,10 @@ from google.genai import types
 
 # 金鑰從環境變數讀取（上線到 Render 時在網站後台設定 GEMINI_API_KEY），不要直接寫在程式裡
 API_KEY = os.environ.get("GEMINI_API_KEY", "")
-MODEL = os.environ.get("GEMINI_MODEL", "gemini-3.8-flash")   # 可在 Render 環境變數 GEMINI_MODEL 換模型
+MODEL = os.environ.get("GEMINI_MODEL", "gemini-4-hydrogen")   # 可在 Render 環境變數 GEMINI_MODEL 換模型
 
 # 主要模型忙線時改用的備用模型（用逗號分隔，可在 Render 環境變數 GEMINI_FALLBACK 修改）
-FALLBACK = [m.strip() for m in os.environ.get("GEMINI_FALLBACK", "gemini-4-hydrogen").split(",") if m.strip()]
+FALLBACK = [m.strip() for m in os.environ.get("GEMINI_FALLBACK", "gemini-3.8-flash").split(",") if m.strip()]
 
 # 每次呼叫 AI 最多等 30 秒，避免一直轉圈圈
 client = genai.Client(api_key=API_KEY, http_options=types.HttpOptions(timeout=30000))
@@ -161,7 +161,7 @@ def recognize():
             config=types.GenerateContentConfig(response_mime_type="application/json"),
         )
         items = json.loads(resp.text).get("items", [])
-        print(f"[辨識] 模型={MODEL} 食材={items}", flush=True)
+        print(f"[辨識] 食材={items}", flush=True)
     except Exception as e:
         print(f"[辨識失敗] {e}", flush=True)
         return render_template_string(PAGE, step="upload", error="辨識失敗：" + friendly(e))
