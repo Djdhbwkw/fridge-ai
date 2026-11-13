@@ -1,4 +1,4 @@
-# AI 冰箱管家 —— 最小可執行版本
+# AI 冰箱管家｜剩食食譜智慧推薦系統
 # 安裝：pip install flask google-genai
 # 執行：python app.py，然後用瀏覽器打開 http://127.0.0.1:5000
 
