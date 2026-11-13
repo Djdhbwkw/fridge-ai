@@ -86,7 +86,9 @@ def recognize():
             config=types.GenerateContentConfig(response_mime_type="application/json"),
         )
         items = json.loads(resp.text).get("items", [])
+        print(f"[辨識] 模型={MODEL} 食材={items}", flush=True)
     except Exception as e:
+        print(f"[辨識失敗] {e}", flush=True)
         return render_template_string(PAGE, step="upload", error=f"辨識失敗：{e}")
     return render_template_string(PAGE, step="confirm", items="\n".join(items))
 
@@ -104,11 +106,14 @@ def recipe():
 2. {'優先使用這些快過期的食材：' + expiring if expiring else '盡量用掉越多種食材越好。'}
 3. {'使用者需求：' + pref if pref else '做法簡單，適合下班後料理。'}
 請用繁體中文推薦 2 道料理，每道包含：料理名稱、預估時間、所需食材與份量、步驟（編號）。"""
+    print(f"[生成食譜] 食材={items} 即期品={expiring} 需求={pref}", flush=True)
     try:
         resp = client.models.generate_content(model=MODEL, contents=prompt)
         text = resp.text
+        print(f"[生成完成] 共 {len(text)} 字", flush=True)
     except Exception as e:
         text = f"生成失敗：{e}"
+        print(f"[生成失敗] {e}", flush=True)
     return render_template_string(PAGE, step="recipe", recipe=text)
 
 
