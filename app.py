@@ -7,6 +7,7 @@ import io
 import json
 import os
 import re
+import threading
 import time
 from collections import defaultdict, deque
 from PIL import Image
@@ -86,6 +87,7 @@ ALLOWED_MIME = {"image/jpeg", "image/png", "image/webp", "image/heic", "image/he
 MAX_ITEMS, MAX_ITEM_LEN, MAX_PREF_LEN = 30, 20, 50
 RATE_LIMIT, RATE_WINDOW = 10, 600   # 同一個 IP 每 10 分鐘最多 10 次 AI 請求，避免額度被刷光
 _hits = defaultdict(deque)
+_hits_lock = threading.Lock()   # 多執行緒同時存取時避免計數錯亂
 
 
 def client_ip():
@@ -94,14 +96,16 @@ def client_ip():
 
 
 def rate_limited():
-    now, q = time.time(), _hits[client_ip()]
-    while q and now - q[0] > RATE_WINDOW:
-        q.popleft()
-    if len(q) >= RATE_LIMIT:
-        print(f"[資安] 請求過於頻繁，已限制 IP={client_ip()}", flush=True)
-        return True
-    q.append(now)
-    return False
+    ip = client_ip()
+    with _hits_lock:
+        now, q = time.time(), _hits[ip]
+        while q and now - q[0] > RATE_WINDOW:
+            q.popleft()
+        if len(q) >= RATE_LIMIT:
+            print(f"[資安] 請求過於頻繁，已限制 IP={ip}", flush=True)
+            return True
+        q.append(now)
+        return False
 
 
 def safe_html(md_text):
