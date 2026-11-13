@@ -134,7 +134,7 @@ PAGE = r"""
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>冰箱管家</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC:wght@400;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@600;700&display=swap" rel="stylesheet">
 <style>
 :root{
  --fridge:#EEF3F2;   /* 冰箱內壁的冷白 */
@@ -145,16 +145,16 @@ PAGE = r"""
  --leaf:#2F6B3B;     /* 青江菜綠：主要按鈕 */
  --leaf-d:#22512C;
  --yolk:#F3C335;     /* 蛋黃：即期品標示 */
- --note:#FFF3B8;     /* 便利貼 */
  --tomato:#B8432B;   /* 只用在錯誤 */
- --hand:"LXGW WenKai TC","Kaiti TC","STKaiti","DFKai-SB",serif;
+ --serif:"Noto Serif TC","Songti TC","PMingLiU",serif;
  --sans:"Noto Sans TC",system-ui,sans-serif;
 }
 *{box-sizing:border-box}
 body{margin:0;background:var(--fridge);color:var(--ink);font:16px/1.7 var(--sans)}
 .page{max-width:560px;margin:0 auto;padding:28px 18px 48px}
 header{margin-bottom:22px}
-header h1{margin:0;font:700 34px/1.2 var(--hand);letter-spacing:1px}
+header h1{margin:0;font:700 32px/1.2 var(--serif);letter-spacing:2px;display:flex;align-items:center;gap:10px}
+header h1:before{content:"";width:12px;height:30px;border-radius:12px 12px 12px 2px;background:var(--leaf);transform:rotate(18deg)}
 header p{margin:6px 0 0;color:var(--soft);font-size:15px}
 .steps{display:flex;gap:18px;margin:0 0 18px;padding:0;list-style:none;font-size:14px;color:var(--soft)}
 .steps li{padding-bottom:4px;border-bottom:2px solid transparent}
@@ -181,7 +181,7 @@ h2{margin:0 0 4px;font-size:20px;line-height:1.4}
 :focus-visible{outline:3px solid var(--yolk);outline-offset:2px}
 .chips{display:flex;flex-wrap:wrap;gap:8px;min-height:40px}
 .chip{display:inline-flex;align-items:center;gap:4px;padding:5px 6px 5px 12px;border:1px solid var(--line);border-radius:6px;background:#fff;font-size:16px;cursor:pointer;user-select:none}
-.chip.exp{background:linear-gradient(transparent 55%,var(--yolk) 55%);border-color:#E2B21F}
+.chip.exp{background:#FFF4CF;border-color:#E2B21F}
 .chip.exp:after{content:"快過期";font-size:12px;color:#7A5A00;margin-left:2px}
 .chip button{order:2;border:0;background:none;width:26px;height:26px;border-radius:4px;cursor:pointer;color:var(--soft);font-size:15px}
 .chip button:hover{background:#EEF2F0;color:var(--tomato)}
@@ -195,22 +195,31 @@ input[type=text]:focus,.add input:focus{outline:none;border-color:var(--leaf)}
 .tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 .tags button{font:14px var(--sans);padding:4px 10px;border:1px solid var(--line);border-radius:20px;background:#fff;color:var(--soft);cursor:pointer}
 .tags button:hover{border-color:var(--leaf);color:var(--leaf)}
-/* 食譜：貼在冰箱門上的便利貼 */
-.recipe .intro{margin:0 0 18px;font-size:16px;color:var(--soft)}
+/* 食譜：像一本家常菜食譜書的一頁 */
+.recipe .intro{margin:0 0 14px;color:var(--soft)}
 .recipe .intro p{margin:0}
-.dish{position:relative;background:var(--note);padding:26px 22px 20px;margin:0 4px 26px;font:18px/1.8 var(--hand);color:#2B2615;box-shadow:0 1px 0 #E6D88F,0 8px 14px -10px #6B5E2266;transform:rotate(-.6deg)}
-.dish:nth-of-type(even){transform:rotate(.5deg);background:#FFE9C2}
-.dish:before{content:"";position:absolute;top:-10px;left:50%;width:84px;height:22px;margin-left:-42px;background:#FFFFFFAA;border:1px solid #0000000d;transform:rotate(-2deg)}
-.dish h3{margin:0 0 8px;font:700 24px/1.4 var(--hand)}
-.dish ul,.dish ol{margin:4px 0 8px;padding-left:24px}
-.dish strong{font-weight:700}
-.dish p{margin:6px 0}
-.recipe>p{font:17px/1.8 var(--hand);color:var(--soft)}
+.book{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:4px 20px;margin-bottom:16px}
+.dish{padding:22px 0 24px}
+.dish+.dish{border-top:6px solid var(--fridge)}
+.dish-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding-bottom:12px;margin-bottom:16px;border-bottom:1px solid var(--line)}
+.dish h3{margin:0;font:700 25px/1.35 var(--serif);letter-spacing:1px}
+.time{flex:none;font-size:14px;color:var(--leaf);font-weight:700;padding:2px 10px;border-radius:20px;background:#E6F0E8}
+.cols{display:grid;grid-template-columns:1fr;gap:18px}
+@media(min-width:520px){.cols{grid-template-columns:150px 1fr;gap:24px}}
+.dish h4{margin:0 0 6px;font-size:14px;color:var(--soft);font-weight:700}
+.ing ul{list-style:none;margin:0;padding:0}
+.ing li{display:flex;justify-content:space-between;gap:8px;padding:5px 0;border-bottom:1px dotted var(--line)}
+.ing li span{color:var(--soft);white-space:nowrap}
+.how ol{list-style:none;margin:0;padding:0;counter-reset:s}
+.how li{counter-increment:s;position:relative;padding:4px 0 10px 34px}
+.how li:before{content:counter(s);position:absolute;left:0;top:2px;font:700 22px/1.2 var(--serif);color:var(--leaf)}
+.dish .raw ul,.dish .raw ol{padding-left:22px}
+.leftover{margin:0 0 18px;padding:12px 14px;border-left:3px solid var(--yolk);background:#FFF9E6;font-size:15px}
 .recipe hr{display:none}
 .err{border:1px solid #E7B4A8;background:#FBEDEA;color:var(--tomato);border-radius:8px;padding:12px 14px;margin-bottom:16px;font-size:15px}
 .load{position:fixed;inset:0;background:#EEF3F2F2;display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:20px;z-index:9}
 .load.on{display:flex}
-.load b{font:700 22px var(--hand)} .load small{color:var(--soft);margin-top:4px}
+.load b{font:700 20px var(--sans)} .load small{color:var(--soft);margin-top:4px}
 .bar{width:180px;height:4px;background:var(--line);border-radius:2px;margin-top:16px;overflow:hidden}
 .bar:after{content:"";display:block;width:40%;height:100%;background:var(--leaf);animation:slide 1.2s ease-in-out infinite}
 @keyframes slide{from{transform:translateX(-100%)}to{transform:translateX(250%)}}
@@ -300,13 +309,35 @@ function submitRecipe(f){if(!list.length){alert('請至少保留一樣食材');r
  return go(f,'正在想今天煮什麼','大約 10～40 秒')}
 (function(){var t=document.getElementById('items');if(t){list=t.value.split('\n').map(function(s){return s.trim()}).filter(Boolean);draw()}
  var r=document.getElementById('recipe');if(!r)return;
- var kids=Array.prototype.slice.call(r.childNodes),cur=null,intro=document.createElement('div'),tail=[];intro.className='intro';
- kids.forEach(function(k){if(k.nodeType===1&&/^H[1-3]$/.test(k.tagName)){cur=document.createElement('section');cur.className='dish';r.appendChild(cur);cur.appendChild(k)}
+ var kids=Array.prototype.slice.call(r.childNodes),cur=null,intro=document.createElement('div'),book=document.createElement('div');
+ intro.className='intro';book.className='book';
+ kids.forEach(function(k){if(k.nodeType===1&&/^H[1-3]$/.test(k.tagName)){cur=document.createElement('section');cur.className='dish';book.appendChild(cur);cur.appendChild(k)}
   else if(cur){cur.appendChild(k)}else if(k.nodeType===1||k.textContent.trim()){intro.appendChild(k)}});
- if(intro.textContent.trim())r.insertBefore(intro,r.firstChild);
- r.querySelectorAll('h1,h2').forEach(function(h){var n=document.createElement('h3');n.innerHTML=h.innerHTML;h.replaceWith(n)});
- var dishes=r.querySelectorAll('.dish');if(dishes.length){var last=dishes[dishes.length-1];var ps=last.querySelectorAll(':scope > p');
-  if(ps.length){var p=ps[ps.length-1];if(/沒用到|下次|保存/.test(p.textContent)){r.appendChild(p)}}}})();
+ r.innerHTML='';if(intro.textContent.trim())r.appendChild(intro);
+ var dishes=book.querySelectorAll('.dish');
+ if(!dishes.length){r.appendChild(intro.childNodes.length?intro:document.createTextNode(''));return}
+ r.appendChild(book);
+ dishes.forEach(function(d){try{fmt(d)}catch(e){}});
+ // 「沒用到的食材」那句話移到最後
+ var last=dishes[dishes.length-1],ps=last.querySelectorAll('p');
+ for(var i=ps.length-1;i>=0;i--){if(/沒用到|下次|保存/.test(ps[i].textContent)){ps[i].className='leftover';r.appendChild(ps[i]);break}}
+})();
+function fmt(d){
+ var h=d.querySelector('h1,h2,h3');var name=h?h.textContent.replace(/^\s*\d+[.、]\s*/,''):'';
+ var time='',ing=[],ul=d.querySelector('ul'),ol=d.querySelector('ol');
+ if(ul){Array.prototype.forEach.call(ul.children,function(li){var t=li.textContent.trim();
+  var m=t.match(/^(預估時間|時間)\s*[:：]\s*(.+)$/);if(m){time=m[2];return}
+  m=t.match(/^(使用食材|所需食材|食材)[^:：]*[:：]\s*(.*)$/);if(m){ing=m[2].split(/[、，,]/).map(function(x){return x.trim()}).filter(Boolean);
+   var sub=li.querySelector('ul');if(sub)Array.prototype.forEach.call(sub.children,function(x){ing.push(x.textContent.trim())});return}})}
+ if(!ol||!ing.length)return;   // 格式不符就保留原本的樣子
+ var out='<div class="dish-head"><h3></h3>'+(time?'<span class="time"></span>':'')+'</div><div class="cols"><div class="ing"><h4>食材</h4><ul></ul></div><div class="how"><h4>做法</h4><ol></ol></div></div>';
+ var keep=Array.prototype.filter.call(d.querySelectorAll(':scope > p'),function(p){return p.textContent.trim()});
+ var steps=Array.prototype.map.call(ol.children,function(li){return li.innerHTML});
+ d.innerHTML=out;d.querySelector('h3').textContent=name;if(time)d.querySelector('.time').textContent=time;
+ var iu=d.querySelector('.ing ul');ing.forEach(function(x){var li=document.createElement('li');var m=x.match(/^(.+?)\s*([\d半一二三兩四五六七八九十少適][^\s]*.*)$/);
+  if(m&&m[1]!==x){li.textContent=m[1];var sp=document.createElement('span');sp.textContent=m[2];li.appendChild(sp)}else{li.textContent=x}iu.appendChild(li)});
+ var oo=d.querySelector('.how ol');steps.forEach(function(s){var li=document.createElement('li');li.innerHTML=s;oo.appendChild(li)});
+ keep.forEach(function(p){d.appendChild(p)})}
 </script>
 </body></html>
 """
