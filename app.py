@@ -132,160 +132,182 @@ def too_large(e):
 PAGE = r"""
 <!doctype html><html lang="zh-Hant"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>AI 冰箱管家</title>
+<title>冰箱管家</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC:wght@400;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
-:root{--g9:#173d22;--g8:#1f5130;--g7:#2e6b3a;--g5:#4c9a5d;--g2:#cfe8d3;--g1:#eaf5ec;--bg:#f2f8f3;--ink:#1d2a20;--mute:#5f7064;--warn:#e07a1f;--warnbg:#fff1e3;--line:#dbe9dd}
+:root{
+ --fridge:#EEF3F2;   /* 冰箱內壁的冷白 */
+ --panel:#FFFFFF;
+ --ink:#1E2B24;
+ --soft:#5E6B64;
+ --line:#D3DDD9;
+ --leaf:#2F6B3B;     /* 青江菜綠：主要按鈕 */
+ --leaf-d:#22512C;
+ --yolk:#F3C335;     /* 蛋黃：即期品標示 */
+ --note:#FFF3B8;     /* 便利貼 */
+ --tomato:#B8432B;   /* 只用在錯誤 */
+ --hand:"LXGW WenKai TC","Kaiti TC","STKaiti","DFKai-SB",serif;
+ --sans:"Noto Sans TC",system-ui,sans-serif;
+}
 *{box-sizing:border-box}
-body{margin:0;font-family:"Noto Sans TC",system-ui,sans-serif;color:var(--ink);background:var(--bg);
- background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);background-size:28px 28px}
-.hero{background:linear-gradient(135deg,var(--g9),var(--g7));color:#fff;padding:28px 16px 64px;text-align:center;position:relative;overflow:hidden}
-.hero:after{content:"";position:absolute;inset:auto -10% -40px;height:80px;background:var(--bg);border-radius:50% 50% 0 0}
-.hero h1{margin:0;font-size:clamp(28px,6vw,40px);font-weight:900;letter-spacing:2px}
-.hero h1 span{display:inline-block;transform:translateY(2px);margin-right:6px}
-.hero p{margin:8px 0 0;opacity:.85;font-size:15px}
-.wrap{max-width:680px;margin:-36px auto 0;padding:0 16px 40px;position:relative;z-index:1}
-.steps{display:flex;justify-content:space-between;background:#fff;border-radius:16px;padding:14px 10px;box-shadow:0 6px 20px #1f513014;margin-bottom:16px;position:relative}
-.step{flex:1;text-align:center;font-size:12px;color:#9aaa9e;position:relative}
-.step i{display:flex;align-items:center;justify-content:center;width:30px;height:30px;margin:0 auto 6px;border-radius:50%;background:#eef2ef;font-style:normal;font-weight:700;position:relative;z-index:1}
-.step:not(:last-child):after{content:"";position:absolute;top:15px;left:calc(50% + 18px);right:calc(-50% + 18px);height:3px;border-radius:2px;background:#e3ebe5}
-.step.done{color:var(--g7)} .step.done i{background:var(--g2);color:var(--g8)} .step.done:after{background:var(--g5)}
-.step.now{color:var(--g8);font-weight:700} .step.now i{background:var(--g7);color:#fff;box-shadow:0 0 0 5px var(--g2)}
-.card{background:#fff;border-radius:20px;padding:22px;box-shadow:0 6px 20px #1f513014;margin-bottom:16px}
-.card h2{margin:0 0 4px;font-size:20px;color:var(--g8)} .sub{margin:0 0 18px;color:var(--mute);font-size:14px}
-.drop{display:block;border:2.5px dashed var(--g5);border-radius:18px;background:var(--g1);padding:34px 16px;text-align:center;cursor:pointer;transition:.2s}
-.drop:hover{background:#dff0e2}
-.drop .ico{font-size:46px;line-height:1}
-.drop b{display:block;margin-top:10px;font-size:17px;color:var(--g8)} .drop small{color:var(--mute)}
-.drop img{display:none;max-width:100%;max-height:320px;border-radius:12px}
-.drop.has img{margin:0 auto} .drop.has .ph{display:none} .drop.has{padding:12px;border-style:solid}
-.drop{position:relative} .drop input[type=file]{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;font-size:0}
-.fname{display:none;margin-top:8px;font-size:14px;color:var(--g8);font-weight:700} .drop.has .fname{display:block}
-.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin-top:18px;padding:15px;border:0;border-radius:14px;
- background:linear-gradient(135deg,var(--g7),var(--g5));color:#fff;font:700 17px "Noto Sans TC",sans-serif;cursor:pointer;box-shadow:0 6px 16px #2e6b3a40;text-decoration:none}
-.btn:disabled{opacity:.5;box-shadow:none;cursor:not-allowed}
-.btn.ghost{background:#fff;color:var(--g7);border:2px solid var(--g5);box-shadow:none}
-.chips{display:flex;flex-wrap:wrap;gap:8px;min-height:44px}
-.chip{display:inline-flex;align-items:center;gap:6px;padding:8px 8px 8px 14px;border-radius:999px;background:var(--g1);border:1.5px solid var(--g2);font-size:15px;cursor:pointer;user-select:none;transition:.15s}
-.chip.exp{background:var(--warnbg);border-color:var(--warn);color:#9a4d0b}
-.chip.exp:before{content:"⏰"}
-.chip button{border:0;background:#0000000f;width:24px;height:24px;border-radius:50%;cursor:pointer;font-size:14px;color:inherit;line-height:1}
-.hint{font-size:13px;color:var(--mute);margin:10px 0 0}
-.hint em{font-style:normal;color:#9a4d0b;background:var(--warnbg);padding:1px 6px;border-radius:6px}
+body{margin:0;background:var(--fridge);color:var(--ink);font:16px/1.7 var(--sans)}
+.page{max-width:560px;margin:0 auto;padding:28px 18px 48px}
+header{margin-bottom:22px}
+header h1{margin:0;font:700 34px/1.2 var(--hand);letter-spacing:1px}
+header p{margin:6px 0 0;color:var(--soft);font-size:15px}
+.steps{display:flex;gap:18px;margin:0 0 18px;padding:0;list-style:none;font-size:14px;color:var(--soft)}
+.steps li{padding-bottom:4px;border-bottom:2px solid transparent}
+.steps li b{font-weight:700;margin-right:4px}
+.steps li.now{color:var(--ink);font-weight:700;border-color:var(--leaf)}
+.steps li.done{color:var(--leaf)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:22px 20px}
+h2{margin:0 0 4px;font-size:20px;line-height:1.4}
+.sub{margin:0 0 18px;color:var(--soft);font-size:15px}
+.drop{position:relative;display:block;border:1.5px dashed #9FB3AA;border-radius:8px;padding:40px 16px;text-align:center;cursor:pointer;background:#F7FAF9}
+.drop:hover,.drop:focus-within{border-color:var(--leaf);background:#F1F7F3}
+.drop input[type=file]{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;font-size:0}
+.drop .ph b{display:block;font-size:17px}
+.drop .ph small{color:var(--soft);font-size:14px}
+.drop img{display:none;max-width:100%;max-height:340px;border-radius:6px;margin:0 auto}
+.drop.has{padding:10px;border-style:solid;border-color:var(--line);background:#fff}
+.drop.has .ph{display:none}
+.fname{display:none;margin-top:8px;font-size:14px;color:var(--soft)} .drop.has .fname{display:block}
+.btn{display:block;width:100%;margin-top:18px;padding:14px;border:0;border-radius:8px;background:var(--leaf);color:#fff;font:700 17px var(--sans);text-align:center;text-decoration:none;cursor:pointer}
+.btn:hover{background:var(--leaf-d)}
+.btn:disabled{opacity:.5;cursor:wait}
+.btn.plain{background:transparent;color:var(--leaf);border:1.5px solid var(--leaf)}
+.btn.plain:hover{background:#E6F0E8}
+:focus-visible{outline:3px solid var(--yolk);outline-offset:2px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;min-height:40px}
+.chip{display:inline-flex;align-items:center;gap:4px;padding:5px 6px 5px 12px;border:1px solid var(--line);border-radius:6px;background:#fff;font-size:16px;cursor:pointer;user-select:none}
+.chip.exp{background:linear-gradient(transparent 55%,var(--yolk) 55%);border-color:#E2B21F}
+.chip.exp:after{content:"快過期";font-size:12px;color:#7A5A00;margin-left:2px}
+.chip button{order:2;border:0;background:none;width:26px;height:26px;border-radius:4px;cursor:pointer;color:var(--soft);font-size:15px}
+.chip button:hover{background:#EEF2F0;color:var(--tomato)}
+.hint{font-size:14px;color:var(--soft);margin:10px 0 0}
 .add{display:flex;gap:8px;margin-top:14px}
-.add input,.field input{flex:1;width:100%;padding:12px 14px;border:1.5px solid var(--line);border-radius:12px;font:16px "Noto Sans TC",sans-serif;background:#fbfdfb}
-.add input:focus,.field input:focus{outline:none;border-color:var(--g5);background:#fff}
-.add button{padding:0 18px;border:0;border-radius:12px;background:var(--g2);color:var(--g8);font:700 15px "Noto Sans TC",sans-serif;cursor:pointer}
-.field{margin-top:18px} .field label{display:block;font-weight:700;font-size:15px;margin-bottom:8px}
+input[type=text],.add input{flex:1;width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:8px;font:16px var(--sans);background:#fff;color:var(--ink)}
+input[type=text]:focus,.add input:focus{outline:none;border-color:var(--leaf)}
+.add button{padding:0 16px;border:1px solid var(--leaf);border-radius:8px;background:#fff;color:var(--leaf);font:700 15px var(--sans);cursor:pointer}
+.field{margin-top:22px;padding-top:18px;border-top:1px solid var(--line)}
+.field label{display:block;font-weight:700;margin-bottom:8px}
 .tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
-.tags span{font-size:13px;padding:5px 10px;border-radius:999px;background:#f1f4f2;color:var(--mute);cursor:pointer}
-.tags span:hover{background:var(--g2);color:var(--g8)}
-.intro{background:var(--g1);border-left:5px solid var(--g5);border-radius:12px;padding:14px 16px;margin:0 0 16px;line-height:1.7}
-.dish{background:#fff;border-radius:20px;padding:20px 22px;box-shadow:0 6px 20px #1f513014;margin-bottom:16px;line-height:1.75}
-.dish h3{margin:0 0 10px;font-size:20px;color:var(--g8);display:flex;gap:10px;align-items:center}
-.dish h3:before{content:"🍳";font-size:22px}
-.dish ul,.dish ol{padding-left:22px;margin:6px 0} .dish li::marker{color:var(--g5);font-weight:700}
-.dish strong{color:var(--g7)}
-.dish hr,.recipe>hr{display:none}
-.err{background:#fff3f2;border:1.5px solid #f2b8b5;color:#a3261d;border-radius:14px;padding:14px 16px;margin-bottom:16px}
-.load{position:fixed;inset:0;background:#173d22e6;display:none;flex-direction:column;align-items:center;justify-content:center;color:#fff;z-index:9;text-align:center;padding:20px}
+.tags button{font:14px var(--sans);padding:4px 10px;border:1px solid var(--line);border-radius:20px;background:#fff;color:var(--soft);cursor:pointer}
+.tags button:hover{border-color:var(--leaf);color:var(--leaf)}
+/* 食譜：貼在冰箱門上的便利貼 */
+.recipe .intro{margin:0 0 18px;font-size:16px;color:var(--soft)}
+.recipe .intro p{margin:0}
+.dish{position:relative;background:var(--note);padding:26px 22px 20px;margin:0 4px 26px;font:18px/1.8 var(--hand);color:#2B2615;box-shadow:0 1px 0 #E6D88F,0 8px 14px -10px #6B5E2266;transform:rotate(-.6deg)}
+.dish:nth-of-type(even){transform:rotate(.5deg);background:#FFE9C2}
+.dish:before{content:"";position:absolute;top:-10px;left:50%;width:84px;height:22px;margin-left:-42px;background:#FFFFFFAA;border:1px solid #0000000d;transform:rotate(-2deg)}
+.dish h3{margin:0 0 8px;font:700 24px/1.4 var(--hand)}
+.dish ul,.dish ol{margin:4px 0 8px;padding-left:24px}
+.dish strong{font-weight:700}
+.dish p{margin:6px 0}
+.recipe>p{font:17px/1.8 var(--hand);color:var(--soft)}
+.recipe hr{display:none}
+.err{border:1px solid #E7B4A8;background:#FBEDEA;color:var(--tomato);border-radius:8px;padding:12px 14px;margin-bottom:16px;font-size:15px}
+.load{position:fixed;inset:0;background:#EEF3F2F2;display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:20px;z-index:9}
 .load.on{display:flex}
-.load .pot{font-size:64px;animation:b 1s ease-in-out infinite}
-@keyframes b{50%{transform:translateY(-12px) rotate(-6deg)}}
-.load b{font-size:20px;margin-top:14px} .load small{opacity:.75;margin-top:6px}
-footer{text-align:center;color:var(--mute);font-size:12px;padding:10px 0 30px}
-@media(max-width:480px){.step{font-size:11px}.card,.dish{padding:18px}}
+.load b{font:700 22px var(--hand)} .load small{color:var(--soft);margin-top:4px}
+.bar{width:180px;height:4px;background:var(--line);border-radius:2px;margin-top:16px;overflow:hidden}
+.bar:after{content:"";display:block;width:40%;height:100%;background:var(--leaf);animation:slide 1.2s ease-in-out infinite}
+@keyframes slide{from{transform:translateX(-100%)}to{transform:translateX(250%)}}
+@media (prefers-reduced-motion:reduce){.bar:after{animation:none;width:100%}.dish,.dish:nth-of-type(even){transform:none}}
+footer{margin-top:28px;font-size:13px;color:var(--soft)}
 </style></head><body>
-<header class="hero">
- <h1><span>🥬</span>AI 冰箱管家</h1>
- <p>讓冰箱裡的剩餘食材，變成下一頓美味。</p>
+<div class="page">
+<header>
+ <h1>冰箱管家</h1>
+ <p>拍一張冰箱裡面，用現有的食材煮今天的晚餐。</p>
 </header>
-<main class="wrap">
-{% set n = {'upload':1,'confirm':3,'recipe':5}[step] %}
-<nav class="steps">
- {% for s in ['拍照上傳','AI 辨識','確認清單','生成推薦','料理呈現'] %}
- <div class="step {{ 'now' if loop.index==n else ('done' if loop.index<n else '') }}"><i>{{ '✓' if loop.index<n else loop.index }}</i>{{ s }}</div>
+{% set n = {'upload':1,'confirm':2,'recipe':3}[step] %}
+<ol class="steps">
+ {% for s in ['拍照','確認食材','看食譜'] %}
+ <li class="{{ 'now' if loop.index==n else ('done' if loop.index<n else '') }}"><b>{{ loop.index }}</b>{{ s }}</li>
  {% endfor %}
-</nav>
+</ol>
 
-{% if error %}<div class="err">⚠️ {{ error }}</div>{% endif %}
+{% if error %}<div class="err" role="alert">{{ error }}</div>{% endif %}
 
 {% if step == 'upload' %}
-<section class="card">
- <h2>📸 拍下你的冰箱</h2>
- <p class="sub">打開冰箱拍一張，AI 會幫你找出有哪些食材。</p>
+<section class="panel">
+ <h2>拍下冰箱裡面</h2>
+ <p class="sub">拍清楚每一層，系統會列出看得到的食材。</p>
  <form method="post" action="/recognize" enctype="multipart/form-data" onsubmit="return checkPhoto(this)">
   <label class="drop" id="drop">
-   <div class="ph"><div class="ico">📷</div><b>點這裡拍照或選照片</b><small>支援手機相機、相簿圖片</small></div>
-   <img id="pv" alt="預覽">
+   <div class="ph"><b>拍照或選一張照片</b><small>手機會直接開啟相機</small></div>
+   <img id="pv" alt="照片預覽">
    <div class="fname" id="fname"></div>
    <input type="file" name="photo" id="photo" accept="image/*" onchange="pick(this)" oninput="pick(this)">
   </label>
-  <button class="btn" id="go1">✨ AI 辨識食材</button>
+  <button class="btn" id="go1">辨識食材</button>
  </form>
 </section>
 {% endif %}
 
 {% if step == 'confirm' %}
-<section class="card">
- <h2>🧺 確認食材清單</h2>
- <p class="sub">AI 找到這些食材，認錯的按 ✕ 刪掉，漏掉的自己加。</p>
+<section class="panel">
+ <h2>冰箱裡有這些</h2>
+ <p class="sub">刪掉認錯的，補上漏掉的。點一下食材可以標成快過期，會優先用掉。</p>
  <div class="chips" id="chips"></div>
- <p class="hint">💡 點一下食材可標記為 <em>⏰ 即期品</em>，AI 會優先用掉它。</p>
- <div class="add"><input id="newItem" placeholder="新增食材，例如：豆腐" onkeydown="if(event.key==='Enter'){event.preventDefault();addItem()}"><button type="button" onclick="addItem()">＋ 加入</button></div>
+ <div class="add"><input id="newItem" aria-label="新增食材" placeholder="補上食材，例如：豆腐" onkeydown="if(event.key==='Enter'){event.preventDefault();addItem()}"><button type="button" onclick="addItem()">加入</button></div>
  <form method="post" action="/recipe" onsubmit="return submitRecipe(this)">
   <textarea name="items" id="items" hidden>{{ items }}</textarea>
   <input type="hidden" name="expiring" id="expiring">
   <div class="field">
-   <label for="pref">🍽️ 口味或需求（可不填）</label>
-   <input type="text" name="pref" id="pref" placeholder="例如：不吃辣、15 分鐘內完成">
-   <div class="tags">{% for t in ['15 分鐘內','不吃辣','清淡','下飯','一人份','素食'] %}<span onclick="tag('{{t}}')">{{t}}</span>{% endfor %}</div>
+   <label for="pref">有什麼要求嗎？（可以不填）</label>
+   <input type="text" name="pref" id="pref" maxlength="50" placeholder="例如：不吃辣、15 分鐘內">
+   <div class="tags">{% for t in ['15 分鐘內','不吃辣','清淡','下飯','一人份','素食'] %}<button type="button" onclick="tag('{{t}}')">{{t}}</button>{% endfor %}</div>
   </div>
-  <button class="btn">🍳 生成專屬食譜</button>
+  <button class="btn">產生食譜</button>
  </form>
 </section>
 {% endif %}
 
 {% if step == 'recipe' %}
 <div class="recipe" id="recipe">{{ recipe|safe }}</div>
-<a href="/" class="btn ghost">📷 再拍一次</a>
+<a href="/" class="btn plain">重新拍一張</a>
 {% endif %}
-</main>
-<footer>AI 冰箱管家 · 剩食食譜智慧推薦系統 · Powered by Gemini</footer>
 
-<div class="load" id="load"><div class="pot">🍲</div><b id="lt">處理中…</b><small id="ls"></small></div>
+<footer>林煜恩｜生成式 AI 專題</footer>
+</div>
+
+<div class="load" id="load" aria-live="polite"><b id="lt">處理中</b><small id="ls"></small><div class="bar"></div></div>
 <script>
 function go(f,t,s){document.getElementById('lt').textContent=t;document.getElementById('ls').textContent=s;document.getElementById('load').classList.add('on');var b=f.querySelector('.btn');if(b)b.disabled=true;return true}
-window.addEventListener('pageshow',function(){document.getElementById('load').classList.remove('on')});
+window.addEventListener('pageshow',function(){document.getElementById('load').classList.remove('on');document.querySelectorAll('.btn').forEach(function(b){b.disabled=false})});
 function pick(i){var f=i.files&&i.files[0];if(!f)return;
  var d=document.getElementById('drop'),p=document.getElementById('pv');
- d.classList.add('has');document.getElementById('fname').textContent='✅ 已選擇：'+f.name;
+ d.classList.add('has');document.getElementById('fname').textContent=f.name+'（點照片可以換一張）';
  p.style.display='block';p.onerror=function(){p.style.display='none'};
  try{p.src=URL.createObjectURL(f)}catch(e){p.style.display='none'}}
 function checkPhoto(f){var i=document.getElementById('photo');
  if(!i.files||!i.files[0]){alert('請先拍照或選一張照片');return false}
- return go(f,'AI 正在辨識食材…','大約 10～30 秒')}
+ return go(f,'正在看你的冰箱','大約 10～30 秒')}
 var list=[],exp={};
 function draw(){var c=document.getElementById('chips');if(!c)return;c.innerHTML='';
- if(!list.length){c.innerHTML='<span class="hint">目前沒有食材，請在下方新增。</span>'}
- list.forEach(function(n,i){var d=document.createElement('span');d.className='chip'+(exp[n]?' exp':'');d.textContent=n;d.title='點一下標記為即期品';
-  d.onclick=function(){exp[n]=!exp[n];draw()};
-  var x=document.createElement('button');x.type='button';x.textContent='✕';x.title='刪除';x.onclick=function(e){e.stopPropagation();list.splice(i,1);delete exp[n];draw()};
+ if(!list.length){c.innerHTML='<span class="hint">還沒有食材，從下面補上。</span>'}
+ list.forEach(function(n,i){var d=document.createElement('span');d.className='chip'+(exp[n]?' exp':'');d.textContent=n;d.tabIndex=0;d.setAttribute('role','button');d.title='點一下標成快過期';
+  d.onclick=function(){exp[n]=!exp[n];draw()};d.onkeydown=function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();d.onclick()}};
+  var x=document.createElement('button');x.type='button';x.textContent='✕';x.setAttribute('aria-label','刪除'+n);x.onclick=function(e){e.stopPropagation();list.splice(i,1);delete exp[n];draw()};
   d.appendChild(x);c.appendChild(d)})}
-function addItem(){var i=document.getElementById('newItem');var v=i.value.trim();if(v&&list.indexOf(v)<0){list.push(v);draw()}i.value='';i.focus()}
-function tag(t){var p=document.getElementById('pref');p.value=p.value?p.value+'、'+t:t}
+function addItem(){var i=document.getElementById('newItem');var v=i.value.trim().slice(0,20);if(v&&list.indexOf(v)<0&&list.length<30){list.push(v);draw()}i.value='';i.focus()}
+function tag(t){var p=document.getElementById('pref');if(p.value.indexOf(t)<0)p.value=p.value?p.value+'、'+t:t}
 function submitRecipe(f){if(!list.length){alert('請至少保留一樣食材');return false}
  document.getElementById('items').value=list.join('\n');
  document.getElementById('expiring').value=list.filter(function(n){return exp[n]}).join(', ');
- return go(f,'AI 正在設計你的食譜…','大約 10～40 秒')}
+ return go(f,'正在想今天煮什麼','大約 10～40 秒')}
 (function(){var t=document.getElementById('items');if(t){list=t.value.split('\n').map(function(s){return s.trim()}).filter(Boolean);draw()}
  var r=document.getElementById('recipe');if(!r)return;
- var kids=Array.prototype.slice.call(r.childNodes),cur=null,intro=document.createElement('div');intro.className='intro';
+ var kids=Array.prototype.slice.call(r.childNodes),cur=null,intro=document.createElement('div'),tail=[];intro.className='intro';
  kids.forEach(function(k){if(k.nodeType===1&&/^H[1-3]$/.test(k.tagName)){cur=document.createElement('section');cur.className='dish';r.appendChild(cur);cur.appendChild(k)}
   else if(cur){cur.appendChild(k)}else if(k.nodeType===1||k.textContent.trim()){intro.appendChild(k)}});
  if(intro.textContent.trim())r.insertBefore(intro,r.firstChild);
- r.querySelectorAll('h1,h2').forEach(function(h){var n=document.createElement('h3');n.innerHTML=h.innerHTML;h.replaceWith(n)})})();
+ r.querySelectorAll('h1,h2').forEach(function(h){var n=document.createElement('h3');n.innerHTML=h.innerHTML;h.replaceWith(n)});
+ var dishes=r.querySelectorAll('.dish');if(dishes.length){var last=dishes[dishes.length-1];var ps=last.querySelectorAll(':scope > p');
+  if(ps.length){var p=ps[ps.length-1];if(/沒用到|下次|保存/.test(p.textContent)){r.appendChild(p)}}}})();
 </script>
 </body></html>
 """
