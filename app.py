@@ -2,11 +2,13 @@
 # 安裝：pip install flask google-genai
 # 執行：python app.py，然後用瀏覽器打開 http://127.0.0.1:5000
 
+import html
 import io
 import json
 import os
 import time
 from PIL import Image
+import markdown
 from flask import Flask, request, render_template_string
 from google import genai
 from google.genai import types
@@ -84,7 +86,8 @@ PAGE = """
  h1{color:#2e6b3a} .card{background:#fff;border-radius:12px;padding:16px;margin:12px 0;box-shadow:0 1px 4px #0002}
  button{background:#2e6b3a;color:#fff;border:0;border-radius:8px;padding:10px 18px;font-size:16px}
  textarea,input[type=text]{width:100%;font-size:16px;padding:6px;box-sizing:border-box}
- pre{white-space:pre-wrap;font-family:inherit}
+ .recipe h3{color:#2e6b3a;border-left:5px solid #2e6b3a;padding-left:8px;margin-top:20px}
+ .recipe li{margin:4px 0;line-height:1.6} .recipe hr{border:0;border-top:1px dashed #9c9}
 </style></head><body>
 <h1>🥬 AI 冰箱管家</h1>
 
@@ -113,7 +116,7 @@ PAGE = """
 {% endif %}
 
 {% if step == 'recipe' %}
-<div class="card"><pre>{{ recipe }}</pre></div>
+<div class="card recipe">{{ recipe|safe }}</div>
 <a href="/"><button>再拍一次</button></a>
 {% endif %}
 
@@ -186,7 +189,9 @@ def recipe():
     except Exception as e:
         text = "生成失敗：" + friendly(e)
         print(f"[生成失敗] {e}", flush=True)
-    return render_template_string(PAGE, step="recipe", recipe=text)
+    # AI 回的是 Markdown（### 標題、**粗體**），轉成網頁格式；先跳脫 HTML 避免被插入惡意內容
+    recipe_html = markdown.markdown(html.escape(text), extensions=["sane_lists"])
+    return render_template_string(PAGE, step="recipe", recipe=recipe_html)
 
 
 if __name__ == "__main__":
